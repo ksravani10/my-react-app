@@ -86,9 +86,15 @@ const getEmployees = async (req, res) => {
 const getEmployee = async (req, res) => {
   const { id } = req.params;
   try {
-    const employee = await Employee.findById({ _id: id })
+    let employee;
+    employee = await Employee.findById({ _id: id })
       .populate("userId", { password: 0 })
       .populate("department");
+    if (!employee) {
+     employee = await Employee.findOne({ userId: id })
+        .populate("userId", { password: 0 })
+        .populate("department");
+    }
     return res.status(200).json({ success: true, employee });
   } catch (error) {
     return res
@@ -110,21 +116,27 @@ const updateEmployee = async (req, res) => {
     }
     const user = await User.findById({ _id: employee.userId });
     if (!user) {
-      return res
-        .status(404)
-        .json({ success: false, error: "user not found" });
+      return res.status(404).json({ success: false, error: "user not found" });
     }
-    const updateUser = await User.findByIdAndUpdate({_id: employee.userId}, {name})
-    const updateEmployee = await Employee.findByIdAndUpdate({_id: id}, {
+    const updateUser = await User.findByIdAndUpdate(
+      { _id: employee.userId },
+      { name }
+    );
+    const updateEmployee = await Employee.findByIdAndUpdate(
+      { _id: id },
+      {
         maritalStatus,
         designation,
         salary,
-        department
-    })
-    if(!updateEmployee || !updateUser) {
-      return res.status(404).json({success: false, error: "document not found"})
+        department,
+      }
+    );
+    if (!updateEmployee || !updateUser) {
+      return res
+        .status(404)
+        .json({ success: false, error: "document not found" });
     }
-    return res.status(200).json({success: true, message: "Employee Updated"})
+    return res.status(200).json({ success: true, message: "Employee Updated" });
   } catch (error) {
     return res
       .status(500)
@@ -133,15 +145,25 @@ const updateEmployee = async (req, res) => {
 };
 
 const fetchEmployeesByDepId = async (req, res) => {
-const { id } = req.params;
+  const { id } = req.params;
   try {
-    const employees = await Employee.find({ department: id })
+    const employees = await Employee.find({ department: id });
     return res.status(200).json({ success: true, employees });
   } catch (error) {
     return res
       .status(500)
-      .json({ success: false, error: "server error in getting employeebyDepId" });
+      .json({
+        success: false,
+        error: "server error in getting employeebyDepId",
+      });
   }
-}
+};
 
-export { addEmployee, upload, getEmployees, getEmployee, updateEmployee, fetchEmployeesByDepId };
+export {
+  addEmployee,
+  upload,
+  getEmployees,
+  getEmployee,
+  updateEmployee,
+  fetchEmployeesByDepId,
+};
